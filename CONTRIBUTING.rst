@@ -80,10 +80,11 @@ Ready to contribute? Here's how to set up `bricknil` for local development.
 
     $ git clone git@github.com:your_name_here/bricknil.git
 
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
+3. Install your local copy into a virtualenv. Assuming you have `virtualenv` installed, this is how you set up your fork for local development::
 
-    $ mkvirtualenv bricknil
-    $ cd bricknil/
+    $ cd bricknil
+    $ virtualenv --prompt "[bricknil] " -v .venv
+    $ . .venv/bin/activate
     $ python setup.py develop
 
 4. Create a branch for local development::
