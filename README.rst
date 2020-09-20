@@ -108,9 +108,13 @@ is create a class that subclasses the Bluetooth hub that we'll be using:
    from bricknil.hub import PoweredUpHub
 
    class Train(PoweredUpHub):
+      pass
 
-      async def run(self):
-         ...
+   train = Train("My Train")
+
+   async def run():
+       ...
+
 
 The ``run`` async function (it's actually a coroutine) will contain the code that will control
 everything attached to this hub.  Speaking of which, because we'll be wanting to control the train
@@ -123,11 +127,14 @@ motor connected to this hub, we'd better attach it to the code like so:
 
    @attach(TrainMotor, name='motor')
    class Train(PoweredUpHub):
+       pass
 
-      async def run(self):
-         ...
+   train = Train()
 
-Now, we can access the motor functions by calling the object `self.motor` inside `run`.  For example,
+   async def run():
+       ...
+
+Now, we can access the motor functions by calling the object `train.motor` inside `run`.  For example,
 let's say that we wanted to set the motor speed to 50 (the allowed range is -100 to 100 where negative
 numbers are reverse speeds):
 
@@ -139,18 +146,21 @@ numbers are reverse speeds):
 
    @attach(TrainMotor, name='motor')
    class Train(PoweredUpHub):
+       pass
 
-      async def run(self):
-         await self.motor.set_speed(50)
-         await sleep(5)  # Wait 5 seconds before exiting 
+   train = Train("My Train")
+
+   async def run():
+       await train.motor.set_speed(50)
+       await sleep(5)  # Wait 5 seconds before exiting 
 
 Notice that we're using the `await` keyword in front of all the calls, because
 those are also asynchronous coroutines that will get run in the event loop.
 At some point, the :meth:`bricknil.peripheral.Motor.set_speed` coroutine
 will finish executing and control will return back to the statement after it.
-The next statement is a call to the `sleep` coroutine from the `curio`
+The next statement is a call to the `sleep` coroutine from the `asyncio`
 library. It's important to use this, instead of the regular *function*
-`time.sleep` because `curio.sleep` is a coroutine that will **not** block
+`time.sleep` because `asyncio.sleep` is a coroutine that will **not** block
 other tasks from running.
 
 Note that we can use arbitrary Python to build our controller; suppose that we
@@ -160,12 +170,12 @@ the `run` logic as:
 
 .. code-block:: python
 
-    async def run(self):
-        for i in range(2):
-            await self.motor.ramp_speed(80,5000)
-            await sleep(5)
-            await self.motor.ramp_speed(0,1000) 
-            await sleep(2)
+   async def run():
+       for i in range(2):
+           await train.motor.ramp_speed(80,5000)
+           await sleep(5)
+           await train.motor.ramp_speed(0,1000) 
+           await sleep(2)
 
 The :meth:`bricknil.peripheral.Motor.ramp_speed` function will ramp the speed from 
 whatever it is currently to the target speed over the millisecond duration given (internally, it will
@@ -184,33 +194,24 @@ Here's the run coroutine with logging statements via
 
 .. code-block:: python
 
-    async def run(self):
-        self.message_info("Running")
-        for i in range(2):
-            self.message_info('Increasing speed')
-            await self.motor.ramp_speed(80,5000)
-            await sleep(5)
-            self.message_info('Coming to a stop')
-            await self.motor.ramp_speed(0,1000) 
-            await sleep(2)
+   async def run():
+       self.message_info("Running")
+       for i in range(2):
+           train.message_info('Increasing speed')
+           await train.motor.ramp_speed(80,5000)
+           await sleep(5)
+           train.message_info('Coming to a stop')
+           await train.motor.ramp_speed(0,1000) 
+           await sleep(2)
 
 
 Of course, just running the above code isn't quite enough to execute the
-controller.  Once we have the controller logic implemented, we need to define
-our entire system in a separate top-level coroutine like so:
+controller.  Once we have the controller logic implemented, we can go ahead
+and run it:
 
 .. code-block:: python
 
-   async def system():
-       train = Train('My train')
-
-This coroutine instantiates all the hubs we want to control; once we have that,
-we can go ahead and implement the full program that calls
-:func:`bricknil.start` with this `system` coroutine:
-
-.. code-block:: python
-
-   from curio import sleep
+   from asyncio import sleep
    from bricknil import attach, start
    from bricknil.hub import PoweredUpHub
    from bricknil.sensor import TrainMotor
@@ -219,23 +220,23 @@ we can go ahead and implement the full program that calls
 
    @attach(TrainMotor, name='motor')
    class Train(PoweredUpHub):
+       pass
 
-       async def run(self):
-           self.message_info("Running")
-           for i in range(2):
-               self.message_info('Increasing speed')
-               await self.motor.ramp_speed(80,5000)
-               await sleep(5)
-               self.message_info('Coming to a stop')
-               await self.motor.ramp_speed(0,1000) 
-               await sleep(2)
+   train = Train("My Train")
 
-   async def system():
-       train = Train('My train')
+   async def run():
+       train.message_info("Running")
+       for i in range(2):
+           train.message_info('Increasing speed')
+           await train.motor.ramp_speed(80,5000)
+           await sleep(5)
+           train.message_info('Coming to a stop')
+           await train.motor.ramp_speed(0,1000) 
+           await sleep(2)
 
    if __name__ == '__main__':
        logging.basicConfig(level=logging.INFO)
-       start(system)
+       start(run)
 
 
 Running this program will output the following::
@@ -362,7 +363,7 @@ Here's the full code:
 
 .. code-block:: python
 
-   from curio import sleep
+   from asyncio import sleep
    from bricknil import attach, start
    from bricknil.hub import PoweredUpHub
    from bricknil.sensor import TrainMotor, VisionSensor
@@ -418,17 +419,20 @@ On Windows and Linux, you will use the 6-byte Bluetooth network address:
 
 .. code-block:: python
 
-   async def system():
-       hub = Train('train1', ble_id='XX:XX:XX:XX:XX:XX')
-       hub = Train('train2', ble_id='YY:YY:YY:YY:YY:YY')
+   train1 = Train('train1', ble_id='XX:XX:XX:XX:XX:XX')
+   train2 = Train('train2', ble_id='YY:YY:YY:YY:YY:YY')
+
+   bricknil.run(...)
 
 And on OS X systems, you will use the UUID for the Bluetooth hub like so:
 
 .. code-block:: python
 
-   async def system():
-       hub = Train('train1', ble_id='05c5e50e-XXXX-XXXX-XXXX-XXXXXXXXXXXX')
-       hub = Train('train2', ble_id='05c5e50e-YYYY-YYYY-YYYY-YYYYYYYYYYYY')
+   
+   train1 = Train('train1', ble_id='05c5e50e-XXXX-XXXX-XXXX-XXXXXXXXXXXX')
+   train1 = Train('train2', ble_id='05c5e50e-YYYY-YYYY-YYYY-YYYYYYYYYYYY')
+
+   bricknil.run(...)
 
 
 

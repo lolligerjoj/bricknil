@@ -36,4 +36,4 @@ Submodules
 
 """
 
-from .bricknil import attach, start, stop
+from .bricknil import attach, run, initialize, finalize, start

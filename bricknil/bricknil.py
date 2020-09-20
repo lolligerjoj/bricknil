@@ -16,13 +16,15 @@
 
     #. The decorator :class:`attach` to specify peripherals that
        connect to a hub (which enables sensing and motor control functions),
-    #. The function :func:`start` that starts running the BLE communication queue, and all the hubs, in the event-loop system
+    #. Initialization and shutdown functions :func:`initialize` and :func:`shutdown`.
+    #. The function :func:`run` that initialize bricknil and then runs specificed "program"
+       in an event loop.
 
 """
 
 import logging
 import pprint
-from asyncio import run, sleep, Queue, get_event_loop, all_tasks
+from asyncio import run, sleep, get_event_loop
 from asyncio import create_task as spawn
 from functools import partial, wraps
 import uuid
@@ -31,8 +33,6 @@ import uuid
 from .process import Process
 from .ble_queue import BLEventQ
 from .hub import PoweredUpHub, BoostHub, Hub
-
-import threading
 
 # Actual decorator that sets up the peripheral classes
 # noinspection PyPep8Naming
@@ -94,73 +94,86 @@ class attach:
             return o
         return wrapper_f
 
-async def main(system):
+async def initialize():
     """
-    Entry-point coroutine that handles everything. This is to be run run
-    in bricknil's main loop.
-
-    You normally don't need to use this directly, instead use start()
+    Connect and initialize all registered (instantiated) hubs
     """
-    try:
-        # Instantiate the Bluetooth LE handler/queue
-        ble_q = BLEventQ.instance
+    # Connect all the hubs and initialize them
+    for hub in Hub.hubs:
+        await hub.connect()
 
-        # Call the user's system routine to instantiate the processes
-        await system()
 
-        hub_tasks = []
 
-        # Connect all the hubs first before enabling any of them
-        for hub in Hub.hubs:
-            await hub.connect()
-
-        # Start each hub
-        for hub in Hub.hubs:
-            task_run = spawn(hub.run())
-            hub_tasks.append(task_run)
-
-        # Now wait for the tasks to finish
-        ble_q.message_info(f'Waiting for hubs to end')
-
-        for task in hub_tasks:
-            await task
-        ble_q.message_info(f'Hubs end')
-    finally:
-        for hub in Hub.hubs:
-            await hub.disconnect()
-
-        # Print out the port information in debug mode
-        for hub in Hub.hubs:
-            if hub.query_port_info:
-                hub.message_info(pprint.pformat(hub.port_info))
-
-        # At this point no device should be connected, but
-        # just to make sure...
-        await ble_q.disconnect_all()
-
-# Reference to the loop running
-__loop = None
-
-def start(user_system_setup_func, loop=None): #pragma: no cover
+async def finalize():
     """
-        Main entry point into running everything.
-
-        Just pass in the async co-routine that instantiates all your hubs, and this
-        function will take care of the rest.  This includes:
-
-        - Initializing the bluetooth interface object
-        - Starting up the user async co-routines inside the asyncio event loop
+    Finalizes all hubs, disconnects them and cleanup everything.
     """
-    global __loop
-    __loop = get_event_loop()
-    __loop.run_until_complete(main(user_system_setup_func))
+    for hub in Hub.hubs:
+        await hub.disconnect()
 
-def stop():
-    global __loop
-    if __loop != None:
-        tasks = all_tasks(__loop)
-        for task in tasks:
-            task.cancel()
+    # Print out the port information in debug mode
+    for hub in Hub.hubs:
+        if hub.query_port_info:
+            hub.message_info(pprint.pformat(hub.port_info))
+
+    # At this point no device should be connected, but
+    # just to make sure...
+    await BLEventQ.instance.disconnect_all()
+
+def run(program = None): #pragma: no cover
+    """
+    One-go helper to 
+      (i)   connect and initialize all registered (instantiated) hubs, 
+      (ii)  run the "program" and,
+      (iii) shutdown everything.  
+
+    Example::
+
+    car = Car()
+    async def program():
+        car.speed(10)
+        asyncio.sleep(10)
+        car.speed(0)
+    bricknil.run(program())
+    """
+    async def main():
+        await initialize()
+        try: 
+            await program()
+        finally:
+            await finalize()
+    loop = get_event_loop()
+    loop.run_until_complete(main(program))
 
 
 
+def start(setup): #pragma: no cover
+    """
+    Deprecated. Main entry point into running everything.
+
+    Just pass in the async co-routine that instantiates all your hubs, and this
+    function will take care of the rest.  This includes:
+
+    Initializing the bluetooth interface object
+    Starting up the user async co-routines inside the asyncio event loop
+
+    NOTE: Using start() is deprecated, use run() instead. start() is provided
+    for backward compatibility and will wanish.
+    """
+    import warnings
+    warnings.warn("start() is deprecated, use run() instread", DeprecationWarning)
+
+
+    async def main():
+        await setup()
+        await initialize()
+        try: 
+            tasks = []
+            for hub in Hub.hubs:
+                tasks.append(spawn(hub.run()))
+            for task in tasks:
+                await task
+        finally:
+            await finalize()
+    loop = get_event_loop()
+    loop.run_until_complete(main(program))
