@@ -24,7 +24,7 @@ library. Unlike the official apps available from LEGO, BrickNil allows you to co
 hubs with a single program, which lets you easily scale to programming large interactive systems.
 
 BrickNil requires modern Python (designed and tested for 3.7) and uses asynchronous
-event programming built on top of the Curio_ async library.  As an aside, the choice of
+event programming built on top of the asyncio_ async library.  As an aside, the choice of
 async library is fairly arbitrary; and enabling another library such as asyncio or Trio 
 should be straightforward.
 
@@ -66,6 +66,11 @@ An example BrickNil program for controlling the Train motor speed is shown below
 .. _10874: https://www.amazon.com/gp/product/B07BK6M2WC/ref=as_li_tl?ie=UTF8&tag=virantha-20&camp=1789&creative=9325&linkCode=as2&creativeASIN=B07BK6M2WC
 .. _10875: https://www.amazon.com/gp/product/B07BK6KQR6/ref=as_li_tl?ie=UTF8&tag=virantha-20&camp=1789&creative=9325&linkCode=as2&creativeASIN=B07BK6KQR6
 .. _Boost: https://www.amazon.com/gp/product/B06Y6JCTKH/ref=as_li_tl?ie=UTF8&tag=virantha-20&camp=1789&creative=9325&linkCode=as2&creativeASIN=B06Y6JCTKH
+.. _88012: https://www.lego.com/en-gb/product/technic-hub-88012
+.. _42099: https://www.lego.com/en-gb/product/4x4-x-treme-off-roader-42099
+.. _42100: https://www.lego.com/en-gb/product/liebherr-r-9800-excavator-42100
+.. _42109: https://www.lego.com/en-gb/product/app-controlled-top-gear-rally-car-42109
+.. _asyncio: https://docs.python.org/3/library/asyncio.html
 
 Features
 ########
@@ -75,6 +80,7 @@ Features
    * Duplo trains 10874_ and 10875_
    * PoweredUp remote
    * Boost_ Move hub
+   * Technic Hub 88012_ (42099_, 42100_ and 42109_)
 * Supports the following actuators/sensors:
    * Internal motors
    * Train motors
@@ -88,7 +94,6 @@ Features
    * Wedo tiltand motion sensors
 * Fully supports Python asynchronous keywords and coroutines
    * Allows expressive concurrent programming using async/await syntax
-   * The current implementation uses the async library Curio_ by David Beazley 
 * Cross-platform
    * Uses the Bleak Bluetooth Low Energy library
 
