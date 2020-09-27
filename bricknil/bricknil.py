@@ -101,6 +101,7 @@ async def initialize():
     # Connect all the hubs and initialize them
     for hub in Hub.hubs:
         await hub.connect()
+        await hub.initialize()
 
 
 
@@ -109,6 +110,7 @@ async def finalize():
     Finalizes all hubs, disconnects them and cleanup everything.
     """
     for hub in Hub.hubs:
+        await hub.finalize()
         await hub.disconnect()
 
     # Print out the port information in debug mode

@@ -89,7 +89,6 @@ class Hub(Process):
                 else:
                     await sleep(1)
 
-
     async def disconnect(self):
         """
         Releases all resources, stops all (service) tasks and disconnects
@@ -99,7 +98,25 @@ class Hub(Process):
             self.peripheral_task.cancel()
         await self.ble_handler.disconnect(self)
 
+    async def initialize(self):
+        """
+        To be overridden by user subclasses to perform any
+        initialization if needed. For example, car-like models
+        may calibrate steering.
 
+        Called by bricknil.initialize() after hub is connected.
+        """
+        pass
+
+    async def finalize(self):
+        """
+        To be overridden by user subclasses to perform any
+        cleanup if needed. For example, car-like models
+        may stop the model and reset steering.
+
+        Called by bricknil.finalize() brfore hub is disconnected.
+        """
+        pass
 
     async def send_message(self, msg_name, msg_bytes, peripheral=None):
         """Send a message (command) to the hub.
