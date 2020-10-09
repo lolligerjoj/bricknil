@@ -24,6 +24,14 @@ from ..process import Process
 from asyncio import sleep, current_task, create_task as spawn
 from ..const import DEVICES
 
+class NotAttachedException(Exception):
+    """
+    Indicates that given peripheral has not been attached 
+    and thus cannot be used.
+    """
+    pass
+
+
 class PeripheralDefinition(object):
     """Class decorator to automagically define peripheral based on definition
        dictionary. See users
@@ -235,8 +243,8 @@ class Peripheral(Process):
 
     async def send_message(self, msg, msg_bytes):
         """ Send outgoing message to BLEventQ """
-        while not self.message_handler:
-            await sleep(1)
+        if not self.message_handler:
+            raise NotAttachedException("Peripheral %s not yet attached!" % self)
         await self.message_handler(msg, msg_bytes, peripheral=self)
 
     def _convert_speed_to_val(self, speed):
