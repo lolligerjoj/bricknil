@@ -325,7 +325,18 @@ class Peripheral(Process):
                 await self.emit('notify::' + capability.name, capability, self.value[capability])
             await self.emit("notify")
 
-    async def activate_updates(self):
+    async def _attached(self, hub, port):
+        """
+        Called by Hub to inform receiver (self) that it is attached 
+        to given hub and port.
+        """
+        assert self.port == None or self.port == port
+        self.port = port
+        self.message_handler = hub.send_message
+        self.message_info("%s attached to %s, port %d" % (self, hub, port))
+        await self._activate_updates()
+
+    async def _activate_updates(self):
         """ Send a message to the sensor to activate updates
 
             Called via an 'attach' message from

@@ -141,11 +141,7 @@ class Hub(Process):
                 await handler()
         elif msg == 'attach':
             port, device_name = data
-            peripheral = await self.connect_peripheral_to_port(device_name, port)
-            if peripheral:
-                self.message_debug(f'peripheral msg: {peripheral} {msg}')
-                peripheral.message_handler = self.send_message
-                await peripheral.activate_updates()
+            await self._attached_peripheral_to_port(device_name, port)            
         elif msg == 'update_port':
             port, info = data
             self.port_info[port] = info
@@ -174,7 +170,7 @@ class Hub(Process):
         except CancelledError:
             self.message(f'Terminating peripheral')
 
-    async def connect_peripheral_to_port(self, device_name, port):
+    async def _attached_peripheral_to_port(self, device_name, port):
         """Set the port number of the newly attached peripheral
 
         When the hub gets an Attached I/O message on a new port with the device_name,
@@ -190,7 +186,8 @@ class Hub(Process):
             if peripheral.port == port:
                 if device_name == peripheral.sensor_name:
                     self.port_to_peripheral[port] = peripheral
-                    return peripheral
+                    await peripheral._attached(self, port)
+                    return
                 else:
                     raise DifferentPeripheralOnPortError
 
@@ -198,14 +195,8 @@ class Hub(Process):
         # search for the first peripheral with a matching name and attach this port to it
         for peripheral_name, peripheral in self.peripherals.items():
             if peripheral.sensor_name == device_name and peripheral.port == None:
-                peripheral.message(f"ASSIGNING PORT {port} on {peripheral.name}")
-                peripheral.port = port
                 self.port_to_peripheral[port] = peripheral
-                return peripheral
-
-        # User hasn't specified a matching peripheral, so just ignore this attachment
-        return None
-
+                await peripheral._attached(self, port)
 
     def attach_sensor(self, sensor: Peripheral):
         """Add instance variable for this decorated sensor
