@@ -43,11 +43,19 @@ class Hub(Process):
             char_uuid (`uuid.UUID`) : Lego uses only one service characteristic for communicating with the UART services
             tx : Service characteristic for tx/rx messages that's set by :func:`bricknil.ble_queue.BLEventQ.connect`
             peripherals (dict) : Peripheral name => `bricknil.Peripheral`
+            peripherals_attached (`asyncio.Event`) : an event object set when all peripherals are attached
             port_to_peripheral (dict): Port number(int) -> `bricknil.Peripheral`
             port_info (dict):  Keeps track of all the meta-data for each port.  Usually not populated unless `query_port_info` is true
 
     """
     hubs = []
+
+    _signals_ = [
+        'connected',
+        'initialized',
+        'finalized',
+        'disconnected'
+    ]
 
     # noinspection SpellCheckingInspection,SpellCheckingInspection,SpellCheckingInspection,SpellCheckingInspection
     def __init__(self, name, query_port_info=False, ble_id=None):
@@ -70,7 +78,7 @@ class Hub(Process):
         # Register this hub
         Hub.hubs.append(self)
 
-    async def connect(self):
+    async def _connect(self):
         """
         Connects to physical hub.
         """
@@ -89,7 +97,7 @@ class Hub(Process):
                 else:
                     await sleep(1)
 
-    async def disconnect(self):
+    async def _disconnect(self):
         """
         Releases all resources, stops all (service) tasks and disconnects
         from physical hub
@@ -97,6 +105,7 @@ class Hub(Process):
         if self.peripheral_task != None:
             self.peripheral_task.cancel()
         await self.ble_handler.disconnect(self)
+        await self.emit('disconnected')
 
     async def initialize(self):
         """
@@ -114,7 +123,7 @@ class Hub(Process):
         cleanup if needed. For example, car-like models
         may stop the model and reset steering.
 
-        Called by bricknil.finalize() brfore hub is disconnected.
+        Called by bricknil.finalize() before hub is disconnected.
         """
         pass
 
