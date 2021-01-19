@@ -26,7 +26,7 @@ from ..const import DEVICES
 
 class NotAttachedException(Exception):
     """
-    Indicates that given peripheral has not been attached 
+    Indicates that given peripheral has not been attached
     and thus cannot be used.
     """
     pass
@@ -327,7 +327,7 @@ class Peripheral(Process):
 
     async def _attached(self, hub, port):
         """
-        Called by Hub to inform receiver (self) that it is attached 
+        Called by Hub to inform receiver (self) that it is attached
         to given hub and port.
         """
         assert self.port == None or self.port == port
@@ -335,6 +335,13 @@ class Peripheral(Process):
         self.message_handler = hub.send_message
         self.message_info("%s attached to %s, port %d" % (self, hub, port))
         await self._activate_updates()
+
+    def _is_attached(self):
+        """
+        Return True if this peripheral is attached (i.e., an 'attach'
+        message has been received for this peripheral).
+        """
+        return self.message_handler is not None
 
     async def _activate_updates(self):
         """ Send a message to the sensor to activate updates

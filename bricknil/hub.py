@@ -82,14 +82,18 @@ class Hub(Process):
         """
         Connects to physical hub.
         """
-        await self.ble_handler.connect(self)
         self.peripheral_task = spawn(self.peripheral_message_loop())
+        await self.ble_handler.connect(self)
 
         # Need to wait here until all the ports are set
         # Use a faster timeout the first time (for speeding up testing)
+        #
+        # TODO: rewrite following code to use conditions [1].
+        #
+        # [1]: https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition
         first_delay = True
         for name, peripheral in self.peripherals.items():
-            while peripheral.port is None:
+            while not peripheral._is_attached():
                 self.message_info(f"Waiting for peripheral {name} to attach to a port")
                 if first_delay:
                     first_delay = False
@@ -150,7 +154,7 @@ class Hub(Process):
                 await handler()
         elif msg == 'attach':
             port, device_name = data
-            await self._attached_peripheral_to_port(device_name, port)            
+            await self._attached_peripheral_to_port(device_name, port)
         elif msg == 'update_port':
             port, info = data
             self.port_info[port] = info
