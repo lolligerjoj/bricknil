@@ -129,10 +129,10 @@ async def finalize():
 
 def run(program = None): #pragma: no cover
     """
-    One-go helper to 
-      (i)   connect and initialize all registered (instantiated) hubs, 
+    One-go helper to
+      (i)   connect and initialize all registered (instantiated) hubs,
       (ii)  run the "program" and,
-      (iii) shutdown everything.  
+      (iii) shutdown everything.
 
     Example::
 
@@ -145,12 +145,12 @@ def run(program = None): #pragma: no cover
     """
     async def main():
         await initialize()
-        try: 
-            await program()
+        try:
+            await program
         finally:
             await finalize()
     loop = get_event_loop()
-    loop.run_until_complete(main(program))
+    loop.run_until_complete(main())
 
 
 
@@ -174,7 +174,7 @@ def start(setup): #pragma: no cover
     async def main():
         await setup()
         await initialize()
-        try: 
+        try:
             tasks = []
             for hub in Hub.hubs:
                 tasks.append(spawn(hub.run()))
