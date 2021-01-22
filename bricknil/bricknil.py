@@ -183,4 +183,4 @@ def start(setup): #pragma: no cover
         finally:
             await finalize()
     loop = get_event_loop()
-    loop.run_until_complete(main(program))
+    loop.run_until_complete(main())
