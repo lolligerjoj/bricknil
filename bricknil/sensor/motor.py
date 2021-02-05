@@ -13,7 +13,7 @@
 # limitations under the License.
 """All motor related peripherals including base motor classes"""
 
-from asyncio import sleep, current_task, create_task as spawn  # Needed for motor speed ramp
+from asyncio import sleep, current_task, create_task
 
 from enum import Enum
 from struct import pack
@@ -94,7 +94,7 @@ class Motor(Peripheral):
             self.ramp_in_progress_task = None
 
         self.message_debug(f'Starting ramp of speed: {start_speed} -> {target_speed} ({ramp_time_ms/1000}s)')
-        self.ramp_in_progress_task = await spawn(_ramp_speed, daemon = True)
+        self.ramp_in_progress_task = await create_task(_ramp_speed())
 
 class TachoMotor(Motor):
 
