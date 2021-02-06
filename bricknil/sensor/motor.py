@@ -40,16 +40,14 @@ class Motor(Peripheral):
                     Use 0 to put the motor into neutral.
                     255 will do a hard brake - according to "peripherial.py _convert_speed_to_val" ist should be "127" (?)
         """
-        await self._cancel_existing_differet_ramp()
+        await self._cancel_existing_different_ramp()
         self.speed = speed
         self.message_info(f'Setting speed to {speed}')
         await self.set_output(0, self._convert_speed_to_val(speed))
 
-    async def _cancel_existing_differet_ramp(self):
+    async def _cancel_existing_different_ramp(self):
         """Cancel the existing speed ramp if it was from a different task
 
-            Remember that speed ramps must be a task with daemon=True, so there is no
-            one awaiting its future.
         """
         # Check if there's a ramp task in progress
         if self.ramp_in_progress_task:
@@ -68,7 +66,7 @@ class Motor(Peripheral):
 
         """
         TIME_STEP_MS = 100
-        await self._cancel_existing_differet_ramp()
+        await self._cancel_existing_different_ramp()
         assert ramp_time_ms > 100, f'Ramp speed time must be greater than 100ms ({ramp_time_ms}ms used)'
 
         # 500ms ramp time, 100ms per step
