@@ -49,7 +49,10 @@ class Bleak:
         #self.loop = asyncio.new_event_loop()
         #asyncio.set_event_loop(self.loop)
         self.loop = asyncio.get_event_loop()
-        self.loop.run_until_complete(self.asyncio_loop())
+        if self.loop.is_running():
+            self.loop.create_task(self.asyncio_loop())
+        else:
+            self.loop.run_until_complete(self.asyncio_loop())
 
     async def asyncio_loop(self):
 
